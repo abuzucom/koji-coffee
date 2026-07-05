@@ -55,7 +55,7 @@ jobs:
     # Reusable workflow published by google/osv-scanner-action. Uploads
     # results to the repo's Code Scanning tab as SARIF and fails the job
     # on any finding.
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.0.2
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
     with:
       scan-args: |-
         --lockfile=./bun.lock
