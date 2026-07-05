@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+/*
+ * Paper & Ink — koji.coffee design tokens.
+ *
+ * Three modes exposed via `data-theme` on <html>. Ink stays constant per
+ * mode; only the paper changes. No accent colors, no gradients, no shadows —
+ * only hairline rules and typographic weight define hierarchy.
+ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-rule: var(--rule);
+  --color-border: var(--rule);
+  --color-focus: var(--foreground);
+
+  --font-display:
+    "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius: 0px;
+
+  --space-section-y: 7rem;
+  --space-label: 3rem;
+  --space-block: 2rem;
+  --space-cta: 2.5rem;
+  --space-prose: 1.75rem;
+  --space-figure: 2.5rem;
+
+  --type-body-size: 1.0625rem;
+  --type-body-leading: 1.75;
+  --type-body-tracking: -0.005em;
+
+  --type-small-size: 0.9375rem;
+  --type-small-leading: 1.65;
+}
+
+:root,
+[data-theme="light"] {
+  --background: #f5f3ee;
+  --foreground: #0d0d0d;
+  --surface: #ebe8e0;
+  --muted-foreground: #6b6a65;
+  --rule: #d9d5cb;
+}
+
+[data-theme="grey"] {
+  --background: #c7c4bc;
+  --foreground: #05050a;
+  --surface: #b6b3ab;
+  --muted-foreground: #2e2c27;
+  --rule: #7a776f;
+}
+
+[data-theme="dark"] {
+  --background: #0d0d0d;
+  --foreground: #f5f3ee;
+  --surface: #16161a;
+  --muted-foreground: #8a8880;
+  --rule: #2a2a28;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-rule);
+    border-radius: 0 !important;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-foreground);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: var(--color-foreground);
+    color: var(--color-background);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+}
+
+@utility label {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+@utility rule {
+  border-top: 1px solid var(--color-rule);
+}
+
+/* ─── Shared spacing/typography primitives ──────────────── */
+
+@utility section-y {
+  padding-top: var(--space-section-y);
+  padding-bottom: var(--space-section-y);
+}
+
+@utility mt-label {
+  margin-top: var(--space-label);
+}
+@utility mb-label {
+  margin-bottom: var(--space-label);
+}
+@utility mt-block {
+  margin-top: var(--space-block);
+}
+@utility mt-cta {
+  margin-top: var(--space-cta);
+}
+
+@utility prose-body {
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-leading);
+  letter-spacing: var(--type-body-tracking);
+  color: var(--color-foreground);
+}
+@utility prose-body {
+  > * + * {
+    margin-top: var(--space-prose);
+  }
+  figure {
+    margin-top: var(--space-figure);
+    margin-bottom: var(--space-figure);
+  }
+}
+
+@utility prose-muted {
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-leading);
+  letter-spacing: var(--type-body-tracking);
+  color: var(--color-muted-foreground);
+}
+
+@utility text-small {
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-leading);
+}
+
+@utility link-underline {
+  position: relative;
+  display: inline-block;
+}
+@utility link-underline {
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0.35);
+    transform-origin: left;
+    transition: transform 220ms ease;
+  }
+  &:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1rem 1.5rem;
+  background: #5865f2;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  border: 1px solid #5865f2;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+@utility btn-primary {
+  &:hover {
+    background: #4752c4;
+    border-color: #4752c4;
+    transform: translateY(-1px);
+  }
+  &:focus-visible {
+    outline-offset: 4px;
+  }
+}
+
+@utility btn-invert {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1rem 1.5rem;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  border: 1px solid var(--color-background);
+  transition: transform 160ms ease;
+}
+@utility btn-invert {
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

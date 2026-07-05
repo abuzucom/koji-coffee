@@ -1,0 +1,63 @@
+name: Setup Bun with cache
+description: >
+  Installs Bun, restores the Bun global install cache, the Vite dependency
+  pre-bundle cache, and the TypeScript incremental buildinfo cache, then
+  runs `bun install --frozen-lockfile`. Centralises caching so every
+  workflow benefits without duplicating cache keys.
+
+inputs:
+  bun-version:
+    description: Bun version to install.
+    required: false
+    default: "1.2.19"
+  install:
+    description: Whether to run `bun install --frozen-lockfile`.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    # Bun's global module cache. Reused across every job that installs the
+    # same lockfile, so subsequent `bun install` calls skip network I/O
+    # entirely.
+    - name: Restore Bun install cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: bun-store-${{ runner.os }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock', 'bun.lockb') }}
+        restore-keys: |
+          bun-store-${{ runner.os }}-${{ inputs.bun-version }}-
+          bun-store-${{ runner.os }}-
+
+    # Vite pre-bundles dependencies into node_modules/.vite. Restoring it
+    # skips the "optimizing dependencies" cold-start on every build.
+    - name: Restore Vite dep-optimize cache
+      uses: actions/cache@v4
+      with:
+        path: node_modules/.vite
+        key: vite-cache-${{ runner.os }}-${{ hashFiles('bun.lock', 'vite.config.ts') }}
+        restore-keys: |
+          vite-cache-${{ runner.os }}-
+
+    # tsc --noEmit still writes .tsbuildinfo when `incremental: true` is
+    # set in tsconfig.json. Caching it turns full typechecks into
+    # incremental ones (~5-10x faster on warm runs).
+    - name: Restore TypeScript incremental buildinfo
+      uses: actions/cache@v4
+      with:
+        path: .tscache
+        key: tsbuildinfo-${{ runner.os }}-${{ hashFiles('tsconfig.json', 'bun.lock') }}-${{ github.sha }}
+        restore-keys: |
+          tsbuildinfo-${{ runner.os }}-${{ hashFiles('tsconfig.json', 'bun.lock') }}-
+          tsbuildinfo-${{ runner.os }}-
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: bun install --frozen-lockfile

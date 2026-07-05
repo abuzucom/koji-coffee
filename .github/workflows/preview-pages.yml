@@ -1,0 +1,128 @@
+name: PR Preview (GitHub Pages)
+
+# Deploys each pull request to a subdirectory of the `gh-pages` branch so
+# reviewers can click through the built site before merging. GitHub Pages
+# only serves one site per repo, so previews live at:
+#
+#   https://<owner>.github.io/<repo>/pr-<number>/
+#
+# A companion job on PR close removes the preview directory.
+#
+# Requirements (one-time repo setup):
+#   Settings → Pages → Source: "Deploy from a branch" → Branch: `gh-pages` / `/ (root)`.
+#   Note: this replaces the "GitHub Actions" Pages source used by
+#   deploy-pages.yml. If you want BOTH production Pages deploys AND PR
+#   previews, keep deploy-pages.yml for production and let this workflow
+#   publish previews under pr-<n>/ on the same gh-pages branch — then
+#   switch Pages source to `gh-pages` and have deploy-pages.yml also
+#   publish to `gh-pages` root instead of using the Pages Actions source.
+#   Settings → Actions → General → Workflow permissions: "Read and write".
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: preview-pages-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    if: github.event.action != 'closed'
+    name: Build and deploy PR preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Skip forks
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "PR is from a fork; skipping preview deploy (no write token)."
+          exit 0
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun (cached)
+        uses: ./.github/actions/setup-bun-cached
+
+      - name: Build with PR base path
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}/
+        run: bun run build
+
+      - name: SPA fallback (404 = index)
+        run: cp dist/index.html dist/404.html
+
+      - name: Disable Jekyll processing
+        run: touch dist/.nojekyll
+
+      - name: Publish preview to gh-pages/pr-<number>/
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          destination_dir: pr-${{ github.event.pull_request.number }}
+          keep_files: true
+          commit_message: "preview: PR #${{ github.event.pull_request.number }} @ ${{ github.sha }}"
+          user_name: "github-actions[bot]"
+          user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Comment preview URL on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            ### 🔎 Preview deployed
+
+            **URL:** https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-${{ github.event.pull_request.number }}/
+
+            Commit: `${{ github.event.pull_request.head.sha }}`
+            Updated: ${{ github.event.pull_request.updated_at }}
+
+            The preview is torn down automatically when this PR is closed.
+
+  cleanup:
+    if: github.event.action == 'closed'
+    name: Remove PR preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Skip forks
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: exit 0
+
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Delete preview directory and push
+        env:
+          DIR: pr-${{ github.event.pull_request.number }}
+        run: |
+          if [ -d "$DIR" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git rm -rf "$DIR"
+            git commit -m "preview: tear down PR #${{ github.event.pull_request.number }}"
+            git push origin gh-pages
+          else
+            echo "No preview directory to remove."
+          fi
+
+      - name: Update PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            ### 🧹 Preview removed
+
+            The preview for this PR has been torn down.

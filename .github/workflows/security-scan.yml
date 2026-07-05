@@ -1,0 +1,119 @@
+name: Security Scan (weekly)
+
+# Runs a supply-chain / SCA scan on a schedule so newly disclosed
+# vulnerabilities are caught even when no code changes land. Two scanners
+# run in parallel for defence in depth:
+#
+#   1. `bun audit` — reads bun.lock and queries the npm advisory DB.
+#   2. Google OSV-Scanner — cross-references bun.lock/package-lock.json
+#      against the OSV.dev database (GHSA, RUSTSEC, PyPA, etc.),
+#      the same source OWASP Dependency-Check consumes for JS.
+#
+# On failure, an issue is opened (or updated) tagged `security` so the
+# alert is visible without needing to check the Actions tab.
+
+on:
+  schedule:
+    # Mondays 06:00 UTC. Cron uses UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "bun.lock"
+      - "bun.lockb"
+      - ".github/workflows/security-scan.yml"
+
+permissions:
+  contents: read
+  issues: write
+  security-events: write
+
+concurrency:
+  group: security-scan
+  cancel-in-progress: false
+
+jobs:
+  bun-audit:
+    name: bun audit (high+)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun (cached)
+        uses: ./.github/actions/setup-bun-cached
+
+      - name: Audit (high and critical fail the build)
+        run: bun audit --audit-level=high
+
+  osv-scanner:
+    name: OSV-Scanner (SCA)
+    # Reusable workflow published by google/osv-scanner-action. Uploads
+    # results to the repo's Code Scanning tab as SARIF and fails the job
+    # on any finding.
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.0.2
+    with:
+      scan-args: |-
+        --lockfile=./bun.lock
+      # Fail the run on any vulnerability, not just high/critical, since
+      # this is a scheduled check with no time pressure.
+      fail-on-vuln: true
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+  notify-on-failure:
+    name: File issue if a scan failed
+    needs: [bun-audit, osv-scanner]
+    if: failure() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Open or update tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "Weekly security scan detected vulnerabilities";
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              "The scheduled security scan reported one or more findings.",
+              "",
+              `- **Run:** ${runUrl}`,
+              `- **Triggered by:** \`${context.eventName}\``,
+              `- **Commit:** \`${context.sha}\``,
+              "",
+              "Check the OSV-Scanner results in the repo's **Security → Code scanning** tab",
+              "and the `bun audit` output in the workflow logs. Fix by upgrading the",
+              "affected packages in `package.json` and committing the regenerated lockfile.",
+            ].join("\n");
+
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "security",
+              per_page: 50,
+            });
+            const match = existing.find((i) => i.title === title);
+
+            if (match) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: match.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["security"],
+              });
+            }

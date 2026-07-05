@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Each check runs in its own job so they execute in parallel on separate
+# runners. They all share the composite setup action's caches
+# (~/.bun/install/cache, node_modules/.vite, .tscache) so the second job
+# to hit a warm cache pays no install cost. Total wall-clock time is
+# roughly max(job_durations) instead of sum(job_durations).
+
+jobs:
+  pins:
+    name: Pinned versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Bun (cached)
+        uses: ./.github/actions/setup-bun-cached
+      - name: Enforce exact dependency versions
+        run: bun run check:pins
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Bun (cached)
+        uses: ./.github/actions/setup-bun-cached
+      - run: bun run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Bun (cached)
+        uses: ./.github/actions/setup-bun-cached
+      - run: bunx tsc --noEmit
+
+  audit:
+    name: Audit (high+)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Bun (cached)
+        uses: ./.github/actions/setup-bun-cached
+      - run: bun audit --audit-level=high
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Bun (cached)
+        uses: ./.github/actions/setup-bun-cached
+      - name: Build
+        run: bun run build
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+          retention-days: 7
+
+  # Single required check for branch-protection rules: succeeds only when
+  # every parallel job above succeeds. Point "Require status checks" at
+  # this one job instead of listing all five.
+  ci:
+    name: CI
+    if: always()
+    needs: [pins, lint, typecheck, audit, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Verify all checks passed
+        run: |
+          if [ "${{ needs.pins.result }}" != "success" ] \
+            || [ "${{ needs.lint.result }}" != "success" ] \
+            || [ "${{ needs.typecheck.result }}" != "success" ] \
+            || [ "${{ needs.audit.result }}" != "success" ] \
+            || [ "${{ needs.build.result }}" != "success" ]; then
+            echo "One or more CI jobs failed."
+            exit 1
+          fi
+          echo "All CI jobs passed."
