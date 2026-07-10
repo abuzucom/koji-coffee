@@ -26,6 +26,7 @@ const buckets = [
   "devDependencies",
   "peerDependencies",
   "optionalDependencies",
+  "overrides",
 ] as const;
 
 const problems: string[] = [];
