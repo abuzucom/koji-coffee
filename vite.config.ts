@@ -3,11 +3,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// Portable Vite configuration. No Lovable / TanStack Start dependencies.
+// Portable Vite configuration with no proprietary build-platform dependencies.
 // Emits a fully static bundle in `dist/` suitable for GitHub Pages or
-// Cloudflare Pages. The dev server binds to the sandbox host/port used by
-// the Lovable preview so the in-editor preview keeps working while the
-// project remains deployable anywhere.
+// Cloudflare Pages. The dev server binds to all interfaces so it stays
+// reachable from a container or preview host, while the build output remains
+// deployable to any static host.
 export default defineConfig(({ mode }) => ({
   base: process.env.VITE_BASE ?? "/",
   plugins: [react(), tailwindcss()],

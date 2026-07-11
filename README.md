@@ -22,8 +22,9 @@ treated like a lab notebook.
 - Self-hosted Instrument Serif + Inter Tight + JetBrains Mono
   (via `@fontsource*`, no CDNs)
 
-**Fully portable** — no Lovable, no Supabase, no TanStack Start, no serverless
-runtime. `bun run build` emits a static `dist/` deployable to any static host.
+**Fully portable** — no proprietary app-builder platform, no Supabase, no
+TanStack Start, no serverless runtime. `bun run build` emits a static `dist/`
+deployable to any static host.
 
 ## Local development
 
