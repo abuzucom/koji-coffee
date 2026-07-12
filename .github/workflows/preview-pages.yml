@@ -44,7 +44,7 @@ jobs:
           echo "PR is from a fork; skipping preview deploy (no write token)."
           exit 0
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -98,7 +98,7 @@ jobs:
         if: github.event.pull_request.head.repo.full_name != github.repository
         run: exit 0
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: gh-pages
           fetch-depth: 0
