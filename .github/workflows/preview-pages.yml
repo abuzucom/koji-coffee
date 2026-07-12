@@ -75,7 +75,7 @@ jobs:
           user_email: "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Comment preview URL on PR
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: pr-preview
           message: |
@@ -119,7 +119,7 @@ jobs:
           fi
 
       - name: Update PR comment
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: pr-preview
           message: |
