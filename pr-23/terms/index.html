@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/koji-coffee/pr-23/favicon.ico" type="image/x-icon" />
+
+    <title>Terms — koji.coffee</title>
+    <meta name="description" content="Informational front door to the koji.coffee Discord. Community participation, content ownership, and safety disclaimers." />
+    <meta name="author" content="koji.coffee" />
+    <meta name="theme-color" content="#f5f3ee" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)" />
+
+    
+    <meta property="og:title" content="Terms — koji.coffee" />
+    <meta property="og:description" content="Informational front door to the koji.coffee Discord. Community participation, content ownership, and safety disclaimers." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://koji.coffee/terms" />
+    <meta property="og:site_name" content="koji.coffee" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Terms — koji.coffee" />
+    <meta name="twitter:description" content="Informational front door to the koji.coffee Discord. Community participation, content ownership, and safety disclaimers." />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://koji.coffee/#organization",
+            "name": "koji.coffee",
+            "url": "https://koji.coffee/",
+            "email": "hello@koji.coffee",
+            "description": "An open Discord community for roasters, home brewers, and experimental-brewing enthusiasts trading fermentation logs, extraction heresies, and blind cupping data.",
+            "foundingDate": "2024",
+            "sameAs": [
+              "https://github.com/koji-coffee/koji.coffee"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://koji.coffee/#website",
+            "url": "https://koji.coffee/",
+            "name": "koji.coffee",
+            "description": "A small room for people who brew coffee like a laboratory.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://koji.coffee/#organization" }
+          }
+        ]
+      }
+    </script>
+
+    <!--
+      Content Security Policy shipped as a meta tag so it applies on any static
+      host (GitHub Pages does not let us configure response headers). The
+      Cloudflare deployment additionally ships a `_headers` file with the same
+      policy plus HSTS, X-Content-Type-Options, Referrer-Policy, etc.
+      'unsafe-inline' on style-src is required by Tailwind's runtime-injected
+      styles; there is no script 'unsafe-inline'.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'sha256-xC5ZZd0gpQvxcTPMSbpsGei+KUSMTPaetfQQP7e/Q1o='; font-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    />
+    <!--
+      Note: `frame-ancestors` is only enforced when delivered via HTTP response
+      header, not via <meta>. It is set in `public/_headers` for the Cloudflare
+      Pages deploy. GitHub Pages doesn't allow custom response headers, so
+      clickjacking protection there relies on the browser's default same-origin
+      framing behavior for `*.github.io` and on X-Frame-Options set upstream.
+    -->
+    <meta name="x-frame-options" content="DENY" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!--
+      Blocking theme bootstrap: resolves the persisted or system preference
+      before first paint to prevent a flash of the wrong theme. Kept tiny and
+      inline so no separate script fetch is required.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("koji-theme");
+          var theme = stored;
+          if (!theme || theme === "system") {
+            theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          }
+          document.documentElement.dataset.theme = theme;
+        } catch (_err) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/koji-coffee/pr-23/assets/index-ChJfcPcx.js"></script>
+    <link rel="stylesheet" crossorigin href="/koji-coffee/pr-23/assets/index-whRiXBDe.css">
+      <link rel="canonical" href="https://koji.coffee/terms" />
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
